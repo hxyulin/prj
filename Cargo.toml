@@ -1,0 +1,26 @@
+[package]
+name = "prj-cli"
+version = "0.0.1"
+authors = ["hxyulin <hxyulin@proton.me>"]
+description = "A CLI tool for managing projects on your local machine"
+license = "MIT"
+repository = "https://github.com/hxyulin/prj"
+homepage = "https://github.com/hxyulin/prj"
+documentation = "https://docs.rs/prj-cli"
+readme = "README.md"
+keywords = ["cli", "project-management", "github", "git", "workspace"]
+categories = ["command-line-utilities", "development-tools::project-management"]
+edition = "2021"
+
+[[bin]]
+name = "prj"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.20", features = ["derive"] }
+colored = "2.1.0"
+dirs = "5.0.1"
+prettytable = "0.10.0"
+serde = { version = "1.0.214", features = ["derive"] }
+toml = "0.8.19"
+
