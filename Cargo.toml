@@ -9,7 +9,7 @@ homepage = "https://github.com/hxyulin/prj"
 documentation = "https://docs.rs/prj-cli"
 readme = "README.md"
 keywords = ["cli", "project-management", "github", "git", "workspace"]
-categories = ["command-line-utilities", "development-tools::project-management"]
+categories = ["command-line-utilities", "development-tools"]
 edition = "2021"
 
 [[bin]]
