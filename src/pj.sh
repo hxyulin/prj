@@ -1,13 +1,9 @@
 function pj() {
-    local project_name="$1"
-    if [ -z "$project_name" ]; then
-        echo "Please provide a project name."
-        return 1
-    fi
-    project_path=$(prj print-path "$project_name")
-    if [ $? -eq 0 ]; then
-        cd "$project_path" || echo "Failed to navigate to project path."
+    project_path=$(prj print-path "$@" | tail -n 1)
+
+    if [ $? -eq 0 ] && [ -n "$project_path" ]; then
+        cd "$project_path" || echo "Error: Failed to change directory to $project_path"
     else
-        echo "Project '$project_name' not found."
+        echo "Error: $project_path"
     fi
 }

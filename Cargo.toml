@@ -1,6 +1,6 @@
 [package]
 name = "prj-cli"
-version = "0.0.1"
+version = "1.0.0"
 authors = ["hxyulin <hxyulin@proton.me>"]
 description = "A CLI tool for managing projects on your local machine"
 license = "MIT"
@@ -17,10 +17,12 @@ name = "prj"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.5.20", features = ["derive"] }
+clap = { version = "4.5.20", features = ["color", "derive", "wrap_help"] }
 colored = "2.1.0"
+dialoguer = "0.11.0"
 dirs = "5.0.1"
 prettytable = "0.10.0"
 serde = { version = "1.0.214", features = ["derive"] }
+skim = "0.10.4"
 toml = "0.8.19"
 

@@ -73,6 +73,12 @@ prj remove --name myproject
 - **--name**: Name of the project (optional)
 - **--path**: Path of the project (optional)
 
+#### Reorder
+Reorder projects by their names.
+```bash
+prj reorder
+```
+
 #### `clone`
 Clone a GitHub repository and automatically add it as a project.
 ```bash
@@ -93,11 +99,15 @@ Sets up the project manager and adds a `pj` shell function for quick project nav
    ```bash
    prj add --name myproject --type Cargo --path /home/user/myproject
    ```
+   
+   To add a project interactively, you can use `prj add` without any arguments.
 
 2. **List Projects**:
    ```bash
    prj list
    ```
+
+   For an interactive list, you can use `prj list --interactive`, and multi selection can be enabled with `prj list --interactive --multi`.
 
 3. **Clone a Repository**:
    ```bash
@@ -110,6 +120,11 @@ Sets up the project manager and adds a `pj` shell function for quick project nav
    ```
 
    This will `cd` into the project directory if you sourced your shell configuration after running `prj setup`.
+
+   An interactive project selection can be enabled by specifying no arguments:
+   ```bash
+   pj
+   ```
 
 ## License
 

@@ -1,18 +1,22 @@
 use clap::{Parser, Subcommand};
 use colored::*;
+use dialoguer::theme::ColorfulTheme;
+use dialoguer::{Confirm, Select, Sort};
 use prettytable::{format, Cell, Row, Table};
 use std::env::current_dir;
 use std::fs;
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 
+mod input;
 mod project;
+
 use project::{project_state_dir, Project, ProjectStorage, ProjectType};
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(name = "prj", version, about, long_about = None)]
 struct Args {
     #[command(subcommand)]
     command: Commands,
@@ -33,19 +37,33 @@ enum Commands {
     /// Print project path
     PrintPath {
         /// Project name to get path
-        name: String,
+        name: Option<String>,
     },
     /// Remove a project by name or path
     Remove {
         /// Project name to remove
-        #[arg(long)]
+        #[arg(short, long)]
         name: Option<String>,
         /// Path to the project to remove
-        #[arg(long)]
+        #[arg(short, long)]
         path: Option<PathBuf>,
     },
     /// List all projects
-    List,
+    List {
+        /// Enable interactive mode
+        #[arg(short, long)]
+        interactive: bool,
+        /// Allow selecting multiple projects
+        /// (only applicable in interactive mode)
+        /// Keyboard shortcuts:
+        /// - `TAB`: Select multiple items
+        /// - `CTRL-A`: Select all items
+        /// - `CTRL-U`: Clear query
+        #[arg(short, long)]
+        multi: bool,
+    },
+    /// Reorder projects
+    Reorder,
     /// Setup the project manager
     Setup,
     /// Clone a new GitHub repository and add as a project
@@ -73,6 +91,7 @@ impl FromStr for ProjectType {
         match s {
             "CMake" => Ok(ProjectType::CMake),
             "Cargo" => Ok(ProjectType::Cargo),
+            "Other" => Ok(ProjectType::Other),
             _ => Err(format!("Invalid project type: {}", s)),
         }
     }
@@ -88,20 +107,66 @@ fn main() {
             project_type,
             path,
         } => {
-            let name =
-                name.unwrap_or_else(|| prompt("Enter project name: ".bold().green().to_string()));
+            // Current directory name as default project name
+            let name = name.unwrap_or_else(|| {
+                let current_dir_name = current_dir()
+                    .expect("Unable to get current directory")
+                    .file_name()
+                    .expect("Unable to get current directory name")
+                    .to_string_lossy()
+                    .to_string();
+
+                input::prompt(
+                    "Enter project name: ".bold().green().to_string(),
+                    Some(current_dir_name),
+                )
+            });
             let project_type = project_type.unwrap_or_else(|| {
-                prompt_enum(
-                    "Enter project type (CMake, Cargo): "
+                match input::prompt_enum(
+                    "Enter project type (CMake, Cargo, Other): "
                         .bold()
                         .green()
                         .to_string(),
-                    &["CMake", "Cargo"],
-                )
+                    &["CMake", "Cargo", "Other"],
+                    Some("Other".to_string()),
+                ) {
+                    Some(project_type) => project_type,
+                    None => {
+                        println!("{}", "Project creation canceled.".bold().yellow());
+                        std::process::exit(0);
+                    }
+                }
             });
             let path = path.unwrap_or_else(|| {
-                std::env::current_dir().expect("Unable to get current directory")
+                let input = input::prompt_empty(
+                    "Enter project path (empty for current directory): "
+                        .bold()
+                        .green()
+                        .to_string()
+                );
+
+                if input.is_empty() {
+                    current_dir().expect("Unable to get current directory")
+                } else {
+                    match fs::canonicalize(PathBuf::from(input)) {
+                        Ok(path) => path,
+                        Err(e) => {
+                            eprintln!("Failed to resolve path: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
             });
+
+            if !path.exists() {
+                eprintln!("{}", "Path does not exist.".bold().red());
+                return;
+            }
+
+            if !path.is_dir() {
+                eprintln!("{}", "Path is not a directory.".bold().red());
+                return;
+            }
 
             let project = Project {
                 name,
@@ -112,7 +177,16 @@ fn main() {
             println!("{}", "Project added successfully.".bold().blue());
         }
         Commands::PrintPath { name } => {
+            let name = name.unwrap_or_else(|| {
+                input::choose_project_name(&storage, false)
+                    .map(|names| names.first().unwrap().clone())
+                    .unwrap_or_else(|| {
+                        input::prompt("Enter project name: ".bold().green().to_string(), None)
+                    })
+            });
+
             if let Some(path) = storage.get_project_path(&name) {
+                println!("{}", "Project path:".bold().green());
                 println!("{}", path.display());
             } else {
                 println!("{}", "Project not found.".bold().red());
@@ -126,9 +200,99 @@ fn main() {
                 println!("{}", "Please specify a project name or path.".bold().red());
             }
         }
-        Commands::List => {
-            println!("{}", "Listing all projects:".bold().blue());
-            display_projects(&storage);
+        Commands::List { interactive, multi } => {
+            if interactive {
+                let names = match input::choose_project_name(&storage, multi) {
+                    Some(names) => names,
+                    None => return,
+                };
+
+                let projects = storage
+                    .projects
+                    .iter()
+                    .filter(|project| names.contains(&project.name))
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                let actions = vec!["Print Path", "Remove", "Exit"];
+                let action_index = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt(format!(
+                        "Select an action for '{}'",
+                        if projects.len() == 1 {
+                            projects.first().unwrap().name.clone()
+                        } else {
+                            format!("{} projects", projects.len())
+                        }
+                    ))
+                    .items(&actions)
+                    .default(0)
+                    .interact_opt()
+                    .expect("Failed to open action menu")
+                    .unwrap_or(2);
+
+                match action_index {
+                    0 => {
+                        for project in projects {
+                            println!("{}", "Project path:".bold().green());
+                            println!("{}", project.path.display());
+                        }
+                    }
+                    1 => {
+                        // "Remove"
+                        let confirm = Confirm::with_theme(&ColorfulTheme::default())
+                            .with_prompt(format!(
+                                "Are you sure you want to remove '{}'",
+                                if projects.len() == 1 {
+                                    projects.first().unwrap().name.clone()
+                                } else {
+                                    format!("{} projects", projects.len())
+                                }
+                            ))
+                            .default(false)
+                            .interact_opt()
+                            .expect("Failed to capture confirmation")
+                            .unwrap_or(false);
+
+                        if confirm {
+                            for project in projects {
+                                storage.remove_project(Some(project.name.clone()), None);
+                                println!("{} '{}'", "Removed project".bold().red(), project.name);
+                            }
+                        } else {
+                            println!("Removal canceled.");
+                        }
+                    }
+                    2 => {}
+                    _ => unreachable!(),
+                }
+            } else {
+                println!("{}", "Listing all projects:".bold().blue());
+                display_projects(&storage);
+            }
+        }
+        Commands::Reorder => {
+            let theme = ColorfulTheme::default();
+            let reorder_indices = Sort::with_theme(&theme)
+                .with_prompt("Reorder projects (space to select)")
+                .items(&storage.projects.iter().map(|p| &p.name).collect::<Vec<_>>())
+                .interact_opt()
+                .expect("Failed to reorder projects");
+
+            if reorder_indices.is_none() {
+                println!("{}", "Reordering canceled.".bold().yellow());
+                return;
+            }
+
+            let mut reordered_projects = Vec::with_capacity(storage.projects.len());
+            for index in reorder_indices.unwrap() {
+                reordered_projects.push(storage.projects[index].clone());
+            }
+
+            assert_eq!(reordered_projects.len(), storage.projects.len());
+            storage.projects = reordered_projects;
+
+            println!("{}", "Projects reordered successfully.".bold().blue());
+
         }
         Commands::Setup => {
             setup_script();
@@ -211,7 +375,8 @@ fn clone_and_add_project(
 
 fn setup_script() {
     let script_content = include_str!("pj.sh");
-    let script_path = project_setup_script_path();
+    let mut script_path = project_state_dir();
+    script_path.push("setup.sh");
 
     fs::write(&script_path, script_content).expect("Failed to write setup script");
 
@@ -238,78 +403,35 @@ fn setup_script() {
         .append(true)
         .open(&rc_file)
         .expect("Failed to open shell rc file");
-    writeln!(
-        file,
-        "\n# Source prj project manager setup script\n{}",
-        source_line
-    )
-    .expect("Failed to write to shell rc file");
+    writeln!(file, "\n# Generated by prj\n{}", source_line)
+        .expect("Failed to write to shell rc file");
 
     println!(
         "{} {}",
         "Setup completed.".bold().green(),
-        format!(
-            "Please restart your terminal or run 'source ~/{shell_rc}' to activate 'pj' command."
-        )
-        .italic()
-        .yellow()
+        "Please restart your terminal or run 'source ~/{shell_rc}' to activate 'pj' command."
+            .italic()
+            .yellow()
     );
-}
-
-fn project_setup_script_path() -> PathBuf {
-    let mut path = project_state_dir();
-    path.push("setup.sh");
-    path
 }
 
 fn display_projects(storage: &ProjectStorage) {
     let mut table = Table::new();
-    table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+    table.set_format(*format::consts::FORMAT_BOX_CHARS);
 
     table.set_titles(Row::new(vec![
-        Cell::new(&"Name".bold().green()),
-        Cell::new(&"Type".bold().green()),
-        Cell::new(&"Path".bold().green()),
+        Cell::new("Name").style_spec("Fb"),
+        Cell::new("Type").style_spec("Fb"),
+        Cell::new("Path").style_spec("Fb"),
     ]));
 
     for project in &storage.projects {
         table.add_row(Row::new(vec![
-            Cell::new(&project.name),
-            Cell::new(&format!("{:?}", project.project_type).cyan()),
-            Cell::new(&project.path.display().to_string().italic()),
+            Cell::new(&project.name).style_spec("Fb"), // Name in Bold
+            Cell::new(&format!("{:?}", project.project_type)).style_spec("Fc"),
+            Cell::new(&project.path.display().to_string()).style_spec("id"),
         ]));
     }
 
     table.printstd();
-}
-
-/// Prompt the user for a string input
-fn prompt(message: String) -> String {
-    print!("{}", message);
-    io::stdout().flush().unwrap();
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read input");
-    input.trim().to_string()
-}
-
-/// Prompt the user for an enum input
-fn prompt_enum<T: std::str::FromStr>(message: String, options: &[&str]) -> T {
-    loop {
-        let input = prompt(message.clone());
-        if let Ok(value) = input.parse::<T>() {
-            return value;
-        } else {
-            println!(
-                "{}",
-                format!(
-                    "Invalid option. Available options are: {}",
-                    options.join(", ")
-                )
-                .bold()
-                .red()
-            );
-        }
-    }
 }
