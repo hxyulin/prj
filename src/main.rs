@@ -142,7 +142,7 @@ fn main() {
                     "Enter project path (empty for current directory): "
                         .bold()
                         .green()
-                        .to_string()
+                        .to_string(),
                 );
 
                 if input.is_empty() {
@@ -290,9 +290,9 @@ fn main() {
 
             assert_eq!(reordered_projects.len(), storage.projects.len());
             storage.projects = reordered_projects;
+            storage.save();
 
             println!("{}", "Projects reordered successfully.".bold().blue());
-
         }
         Commands::Setup => {
             setup_script();
@@ -380,11 +380,14 @@ fn setup_script() {
 
     fs::write(&script_path, script_content).expect("Failed to write setup script");
 
-    let shell_rc = if cfg!(target_os = "macos") {
-        ".zshrc"
-    } else {
-        ".bashrc"
+    let shell = std::env::var("SHELL").unwrap_or_default();
+    let shell_rc = match shell.as_str() {
+        "zsh" => ".zshrc",
+        "bash" => ".bashrc",
+        // TODO: add support for other shells, and give an unknown message instead of assuming bash
+        _ => ".bashrc",
     };
+
     let home_dir = dirs::home_dir().expect("Could not determine home directory");
     let rc_file = home_dir.join(shell_rc);
 
