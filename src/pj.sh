@@ -1,9 +1,7 @@
 function pj() {
-    project_path=$(prj print-path "$@" | tail -n 1)
+    project_path=$(prj print-path "$@")
 
-    if [ $? -eq 0 ] && [ -n "$project_path" ]; then
+    if [ $? -eq 0 ] ; then
         cd "$project_path" || echo "Error: Failed to change directory to $project_path"
-    else
-        echo "Error: $project_path"
     fi
 }
