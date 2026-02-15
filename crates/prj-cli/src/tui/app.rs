@@ -12,10 +12,10 @@ use ratatui::backend::CrosstermBackend;
 use super::actions::{self, ListAction};
 use super::fuzzy::{FuzzyMatch, FuzzyMatcher};
 use super::view;
-use crate::core::clean;
-use crate::core::config::Config;
-use crate::core::project::{Project, ProjectDatabase};
-use crate::core::stats::{self, ProjectStats};
+use prj_core::clean;
+use prj_core::config::Config;
+use prj_core::project::{Project, ProjectDatabase};
+use prj_core::stats::{self, ProjectStats};
 
 pub struct PickerState {
     pub query: String,

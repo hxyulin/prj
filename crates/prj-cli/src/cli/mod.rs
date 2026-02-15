@@ -6,13 +6,13 @@ use std::process;
 
 use bytesize::ByteSize;
 
-use crate::core::clean;
-use crate::core::config::Config;
-use crate::core::detect;
-use crate::core::error::PrjError;
-use crate::core::manifest;
-use crate::core::project::ProjectDatabase;
-use crate::core::stats;
+use prj_core::clean;
+use prj_core::config::Config;
+use prj_core::detect;
+use prj_core::error::PrjError;
+use prj_core::manifest;
+use prj_core::project::ProjectDatabase;
+use prj_core::stats;
 
 use self::args::{Cli, Command};
 

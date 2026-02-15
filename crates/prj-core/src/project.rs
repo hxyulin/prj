@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use super::config::Config;
-use super::detect::{BuildSystem, VcsType};
-use super::error::PrjError;
+use crate::config::Config;
+use crate::detect::{BuildSystem, VcsType};
+use crate::error::PrjError;
 
 /// A registered project with its detected metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -130,7 +130,7 @@ impl ProjectDatabase {
             return Err(PrjError::NotADirectory(path));
         }
 
-        let detection = super::detect::detect_project(&path);
+        let detection = crate::detect::detect_project(&path);
 
         let name = name.map(|s| s.to_string()).unwrap_or_else(|| {
             path.file_name()

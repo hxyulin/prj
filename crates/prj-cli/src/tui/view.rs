@@ -6,7 +6,7 @@ use ratatui::widgets::{Block, Borders, Cell, Clear, List, ListItem, Paragraph, R
 
 use super::actions;
 use super::app::{ListMode, ListState as TuiListState, PickerState};
-use crate::core::project::Project;
+use prj_core::project::Project;
 
 pub fn render_picker(f: &mut Frame, state: &PickerState, projects: &[Project]) {
     let chunks = Layout::default()
@@ -272,7 +272,7 @@ fn render_action_menu(f: &mut Frame, project: &Project, menu_selected: usize) {
     f.render_widget(footer, chunks[1]);
 }
 
-fn render_stats_view(f: &mut Frame, stats: &crate::core::stats::ProjectStats) {
+fn render_stats_view(f: &mut Frame, stats: &prj_core::stats::ProjectStats) {
     let width = 60u16.min(f.area().width.saturating_sub(4));
     let height = f.area().height.saturating_sub(4);
     let area = centered_rect(width, height, f.area());

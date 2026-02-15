@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::project::Project;
+use crate::project::Project;
 
 /// A portable project manifest used for export/import.
 ///

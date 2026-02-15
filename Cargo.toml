@@ -1,43 +1,36 @@
-[package]
-name = "prj"
-version = "0.1.0"
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
+version = "1.1.0"
 edition = "2024"
 license = "MIT"
+repository = "https://github.com/hxyulin/prj"
 
-[dependencies]
-# CLI
-clap = { version = "4", features = ["derive"] }
-
-# TUI
-ratatui = "0.29"
-crossterm = "0.28"
-
-# Fuzzy matching
-nucleo = "0.5"
-
-# Git
-git2 = "0.20"
-
-# LOC counting
-tokei = "12"
-
-# Directory traversal
-walkdir = "2"
-
-# Parallelism
-rayon = "1"
-
-# Config & serialization
+[workspace.dependencies]
+# Core deps
+chrono = { version = "0.4", features = ["serde"] }
+directories = "6"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
-directories = "6"
-
-# Error handling
-color-eyre = "0.6"
-thiserror = "2"
-
-# Misc
-chrono = { version = "0.4", features = ["serde"] }
-shell-words = "1"
+walkdir = "2"
+git2 = "0.20"
+tokei = "12"
+rayon = "1"
 bytesize = { version = "2", features = ["serde"] }
+thiserror = "2"
+color-eyre = "0.6"
+
+# CLI deps
+clap = { version = "4", features = ["derive"] }
+shell-words = "1"
 serde_json = "1.0.149"
+
+# TUI deps
+ratatui = "0.29"
+crossterm = "0.28"
+nucleo = "0.5"
+
+# Internal
+prj-core = { version = "1.1.0", path = "crates/prj-core" }

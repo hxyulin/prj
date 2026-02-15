@@ -5,8 +5,8 @@ mod view;
 
 use std::path::PathBuf;
 
-use crate::core::config::Config;
-use crate::core::project::Project;
+use prj_core::config::Config;
+use prj_core::project::Project;
 
 pub fn run_picker(projects: &[Project]) -> color_eyre::Result<Option<PathBuf>> {
     app::run_picker(projects)

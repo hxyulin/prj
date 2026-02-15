@@ -1,8 +1,12 @@
+mod cli;
+mod tui;
+mod shell;
+
 use clap::Parser;
-use prj::cli::args::Cli;
+use cli::args::Cli;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
-    prj::cli::run(cli)
+    cli::run(cli)
 }

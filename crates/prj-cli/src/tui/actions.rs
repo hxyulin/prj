@@ -1,4 +1,4 @@
-use crate::core::project::Project;
+use prj_core::project::Project;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ListAction {

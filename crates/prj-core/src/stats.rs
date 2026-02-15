@@ -4,7 +4,7 @@ use std::path::Path;
 use bytesize::ByteSize;
 use serde::Serialize;
 
-use super::project::Project;
+use crate::project::Project;
 
 #[derive(Debug, Serialize)]
 pub struct GitStatus {
