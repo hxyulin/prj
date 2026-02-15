@@ -1,0 +1,43 @@
+[package]
+name = "prj"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# TUI
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Fuzzy matching
+nucleo = "0.5"
+
+# Git
+git2 = "0.20"
+
+# LOC counting
+tokei = "12"
+
+# Directory traversal
+walkdir = "2"
+
+# Parallelism
+rayon = "1"
+
+# Config & serialization
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+directories = "6"
+
+# Error handling
+color-eyre = "0.6"
+thiserror = "2"
+
+# Misc
+chrono = { version = "0.4", features = ["serde"] }
+shell-words = "1"
+bytesize = { version = "2", features = ["serde"] }
+serde_json = "1.0.149"
