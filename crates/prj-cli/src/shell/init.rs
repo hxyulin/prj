@@ -12,10 +12,14 @@ pub fn generate_init(shell: &str, cmd: &str) -> color_eyre::Result<String> {
 fn generate_zsh(cmd: &str) -> String {
     format!(
         r#"function {cmd}() {{
-    local result
-    result="$(\command prj "$@" 2>/dev/tty)"
-    if [[ -n "$result" ]]; then
-        \builtin cd -- "$result"
+    if [[ $# -eq 0 ]] || [[ "$1" == "list" ]]; then
+        local result
+        result="$(\command prj "$@" 2>/dev/tty)"
+        if [[ -n "$result" ]]; then
+            \builtin cd -- "$result"
+        fi
+    else
+        \command prj "$@"
     fi
 }}
 "#
@@ -25,10 +29,14 @@ fn generate_zsh(cmd: &str) -> String {
 fn generate_bash(cmd: &str) -> String {
     format!(
         r#"function {cmd}() {{
-    local result
-    result="$(\command prj "$@" 2>/dev/tty)"
-    if [[ -n "$result" ]]; then
-        \builtin cd -- "$result"
+    if [[ $# -eq 0 ]] || [[ "$1" == "list" ]]; then
+        local result
+        result="$(\command prj "$@" 2>/dev/tty)"
+        if [[ -n "$result" ]]; then
+            \builtin cd -- "$result"
+        fi
+    else
+        \command prj "$@"
     fi
 }}
 "#
@@ -38,9 +46,13 @@ fn generate_bash(cmd: &str) -> String {
 fn generate_powershell(cmd: &str) -> String {
     format!(
         r#"function {cmd} {{
-    $result = & prj @args 2>$null
-    if ($result) {{
-        Set-Location -Path $result
+    if ($args.Count -eq 0 -or $args[0] -eq 'list') {{
+        $result = & prj @args 2>$null
+        if ($result) {{
+            Set-Location -Path $result
+        }}
+    }} else {{
+        & prj @args
     }}
 }}
 "#

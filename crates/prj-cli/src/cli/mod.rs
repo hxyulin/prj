@@ -171,7 +171,7 @@ fn cmd_list(config: &Config, plain: bool, tag: Option<&str>) -> color_eyre::Resu
         db.projects.retain(|p| p.tags.iter().any(|t| t == tag));
     }
 
-    if plain || !std::io::stdout().is_terminal() {
+    if plain || !std::io::stderr().is_terminal() {
         if db.projects.is_empty() {
             eprintln!("No projects registered. Use `prj add` or `prj scan` to add projects.");
             return Ok(());
